@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
+  // @ts-ignore
   return new PrismaClient({
     datasources: {
       db: {
