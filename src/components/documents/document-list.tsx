@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { uploadDocument, deleteDocument, getDocuments } from '@/app/actions/documents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,17 +18,22 @@ interface Document {
     _count: { chunks: number };
 }
 
-export default function DocumentList({ initialDocuments }: { initialDocuments: Document[] }) {
-    const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+export default function DocumentList({ initialDocuments, workspaceId }: { initialDocuments: any[], workspaceId?: string }) {
+    const [documents, setDocuments] = useState(initialDocuments);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
         setUploading(true);
         setError(null);
 
         const formData = new FormData(e.currentTarget);
+        if (workspaceId) {
+            formData.append('workspaceId', workspaceId);
+        }
 
         try {
             const result = await uploadDocument(formData);
@@ -53,6 +59,7 @@ export default function DocumentList({ initialDocuments }: { initialDocuments: D
             await deleteDocument(id);
             setDocuments(documents.filter(d => d.id !== id));
         } catch (err) {
+            console.error(err);
             setError('Delete failed');
         }
     };

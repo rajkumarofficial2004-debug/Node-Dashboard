@@ -63,6 +63,7 @@ export async function uploadDocument(formData: FormData) {
                 title: file.name,
                 type: file.type === 'application/pdf' ? 'PDF' : 'TEXT',
                 userId: session.user.id,
+                workspaceId: formData.get('workspaceId') as string || null,
             },
         });
 
@@ -91,12 +92,17 @@ export async function uploadDocument(formData: FormData) {
     }
 }
 
-export async function getDocuments() {
+export async function getDocuments(workspaceId?: string) {
     const session = await auth();
     if (!session?.user) return [];
 
+    const whereClause: any = { userId: session.user.id };
+    if (workspaceId) {
+        whereClause.workspaceId = workspaceId;
+    }
+
     return await (prisma as any).document.findMany({
-        where: { userId: session.user.id },
+        where: whereClause,
         orderBy: { createdAt: 'desc' },
         include: { _count: { select: { chunks: true } } }
     });

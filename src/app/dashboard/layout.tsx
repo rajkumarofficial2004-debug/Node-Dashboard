@@ -28,7 +28,10 @@ export default async function DashboardLayout({
                         AI Study Notes
                     </Link>
                     <Link href="/dashboard/documents" className="block px-4 py-2 rounded hover:bg-gray-800">
-                        Documents (RAG)
+                        Documents (Legacy)
+                    </Link>
+                    <Link href="/dashboard/workspaces" className="block px-4 py-2 rounded hover:bg-gray-800 text-blue-400 font-medium">
+                        Workspaces (New)
                     </Link>
                 </nav>
 
