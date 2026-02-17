@@ -44,6 +44,7 @@ export async function updateUserStatus(userId: string, newStatus: Status) {
         revalidatePath('/dashboard');
         return { message: `User status updated to ${newStatus}` };
     } catch (error) {
+        console.error('Failed to update user status:', error);
         return { message: 'Database Error: Failed to update status.' };
     }
 }

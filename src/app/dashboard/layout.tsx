@@ -24,7 +24,12 @@ export default async function DashboardLayout({
                     <Link href="/dashboard" className="block px-4 py-2 rounded hover:bg-gray-800">
                         Home
                     </Link>
-                    {/* Add more links here */}
+                    <Link href="/dashboard/study-notes" className="block px-4 py-2 rounded hover:bg-gray-800">
+                        AI Study Notes
+                    </Link>
+                    <Link href="/dashboard/documents" className="block px-4 py-2 rounded hover:bg-gray-800">
+                        Documents (RAG)
+                    </Link>
                 </nav>
 
                 <div className="border-t border-gray-700 pt-4">

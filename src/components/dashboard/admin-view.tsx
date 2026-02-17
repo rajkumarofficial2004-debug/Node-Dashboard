@@ -1,6 +1,6 @@
 'use client';
 
-import { Status } from '@prisma/client';
+import type { Status } from '@prisma/client';
 import { updateUserStatus } from '@/app/actions/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,7 +78,11 @@ function UserActions({ user }: { user: User }) {
 
     const handleStatusChange = (status: Status) => {
         startTransition(async () => {
-            await updateUserStatus(user.id, status);
+            try {
+                await updateUserStatus(user.id, status);
+            } catch (error) {
+                console.error("Failed to update status", error);
+            }
         });
     };
 
