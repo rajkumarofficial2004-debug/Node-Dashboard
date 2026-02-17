@@ -7,9 +7,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
 import FirecrawlApp from '@mendable/firecrawl-js';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+// Lazy initialization to prevent build-time/module-load crashes
+const getClients = () => {
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'dummy_key' });
+    return { genAI, groq };
+};
 
 interface ChatResult {
     answer: string;
@@ -24,42 +27,45 @@ export async function chatWithDocuments(question: string, workspaceId?: string, 
     }
 
     try {
+        const { genAI, groq } = getClients();
         let context = '';
         let sources: string[] = [];
 
         // 1. Document RAG (Existing Logic)
-        const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
-        const result = await embeddingModel.embedContent(question);
-        const qEmbedding = result.embedding.values;
+        if (process.env.GOOGLE_API_KEY) {
+            const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+            const result = await embeddingModel.embedContent(question);
+            const qEmbedding = result.embedding.values;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const whereClause: any = { userId: session.user.id };
-        if (workspaceId) {
-            whereClause.workspaceId = workspaceId;
-        }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const whereClause: any = { userId: session.user.id };
+            if (workspaceId) {
+                whereClause.workspaceId = workspaceId;
+            }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const validDocs = await (prisma as any).document.findMany({
-            where: whereClause,
-            select: { id: true, title: true }
-        });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const validDocs = await (prisma as any).document.findMany({
+                where: whereClause,
+                select: { id: true, title: true }
+            });
 
-        if (validDocs.length > 0) {
-            const validDocIds = validDocs.map((d: { id: string }) => d.id);
-            const docMap = new Map(validDocs.map((d: { id: string, title: string }) => [d.id, d.title]));
+            if (validDocs.length > 0) {
+                const validDocIds = validDocs.map((d: { id: string }) => d.id);
+                const docMap = new Map(validDocs.map((d: { id: string, title: string }) => [d.id, d.title]));
 
-            const chunks = await prisma.$queryRaw`
-                SELECT "content", "documentId", 1 - ("embedding" <=> ${qEmbedding}::vector) as similarity
-                FROM "DocumentChunk"
-                WHERE "documentId" IN (${Prisma.join(validDocIds)})
-                ORDER BY similarity DESC
-                LIMIT 5;
-            ` as { content: string, documentId: string, similarity: number }[];
+                const chunks = await prisma.$queryRaw`
+                    SELECT "content", "documentId", 1 - ("embedding" <=> ${qEmbedding}::vector) as similarity
+                    FROM "DocumentChunk"
+                    WHERE "documentId" IN (${Prisma.join(validDocIds)})
+                    ORDER BY similarity DESC
+                    LIMIT 5;
+                ` as { content: string, documentId: string, similarity: number }[];
 
-            if (chunks.length > 0) {
-                context += "## Document Context:\n" + chunks.map(c => c.content).join('\n---\n') + "\n\n";
-                const docSources = Array.from(new Set(chunks.map(c => docMap.get(c.documentId)))).filter(Boolean) as string[];
-                sources = [...sources, ...docSources];
+                if (chunks.length > 0) {
+                    context += "## Document Context:\n" + chunks.map(c => c.content).join('\n---\n') + "\n\n";
+                    const docSources = Array.from(new Set(chunks.map(c => docMap.get(c.documentId)))).filter(Boolean) as string[];
+                    sources = [...sources, ...docSources];
+                }
             }
         }
 
@@ -70,6 +76,9 @@ export async function chatWithDocuments(question: string, workspaceId?: string, 
             }
 
             try {
+                // Initialize Firecrawl only when needed
+                const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+
                 const searchResponse = await firecrawl.search(question, {
                     scrapeOptions: {
                         formats: ['markdown']
@@ -94,8 +103,7 @@ export async function chatWithDocuments(question: string, workspaceId?: string, 
                 }
             } catch (fcError) {
                 console.error('Firecrawl Error:', fcError);
-                // Continue without web results if search fails, but maybe note it?
-                // For now, we'll just log it.
+                // Continue without web results if search fails
             }
         }
 
