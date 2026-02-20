@@ -1,0 +1,10 @@
+PrismaClientKnownRequestError: 
+Invalid `prisma.$executeRaw()` invocation:
+
+
+Raw query failed. Code: `N/A`. Message: `Error in the underlying connector (InvalidArg): unknown variant `InvalidInputValue`, expected one of `GenericJs`, `UnsupportedNativeDataType`, `InvalidIsolationLevel`, `LengthMismatch`, `UniqueConstraintViolation`, `NullConstraintViolation`, `ForeignKeyConstraintViolation`, `DatabaseNotReachable`, `DatabaseDoesNotExist`, `DatabaseAlreadyExists`, `DatabaseAccessDenied`, `ConnectionClosed`, `TlsConnectionError`, `AuthenticationFailed`, `TransactionWriteConflict`, `TableDoesNotExist`, `ColumnNotFound`, `TooManyConnections`, `ValueOutOfRange`, `MissingFullTextSearchIndex`, `TransactionAlreadyClosed`, `postgres`, `mysql`, `sqlite`, `mssql``
+    at ei.handleRequestError (D:\React Admin Dashboard\admin-dashboard\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (D:\React Admin Dashboard\admin-dashboard\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (D:\React Admin Dashboard\admin-dashboard\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (D:\React Admin Dashboard\admin-dashboard\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async main (D:\React Admin Dashboard\admin-dashboard\test_db_full.ts:41:9)

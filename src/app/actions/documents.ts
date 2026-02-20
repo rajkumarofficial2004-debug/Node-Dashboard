@@ -69,17 +69,19 @@ export async function uploadDocument(formData: FormData) {
 
         // 2. Chunk Text & Generate Embeddings
         const chunks = splitTextIntoChunks(text, 1000); // ~1000 chars per chunk
-        const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 
         for (const chunk of chunks) {
             const result = await model.embedContent(chunk);
             const embedding = result.embedding.values;
 
             // Save chunk with embedding
+            const embeddingString = `[${embedding.join(',')}]`;
+
             // Note: Prisma raw query is needed for pgvector until fully supported in typed client
             await prisma.$executeRaw`
                 INSERT INTO "DocumentChunk" ("id", "content", "embedding", "documentId", "createdAt")
-                VALUES (gen_random_uuid(), ${chunk}, ${embedding}::vector, ${document.id}, NOW());
+                VALUES (gen_random_uuid(), ${chunk}, ${embeddingString}::vector, ${document.id}, NOW());
             `;
         }
 
